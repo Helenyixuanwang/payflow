@@ -25,6 +25,19 @@ docker compose up --build
 - Backend: http://localhost:8000 (`/health` for a liveness check)
 - Postgres: localhost:5432 (`payflow`/`payflow`/`payflow`)
 
+### Backend (without Docker)
+
+```bash
+cd backend
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env   # DATABASE_URL defaults to localhost:5432
+alembic upgrade head   # apply migrations (requires Postgres running)
+uvicorn app.main:app --reload
+```
+
+New migrations: `alembic revision --autogenerate -m "description"`, then review the generated file before applying.
+
 ### Frontend
 
 ```bash
