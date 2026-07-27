@@ -13,3 +13,12 @@ FastAPI, PostgreSQL, React + TypeScript, and deployed via Docker/Railway.
 
 ## Setup
 See `.env.example` for required environment variables.
+
+### Frontend
+
+```bash
+cd frontend
+npm install && npm run dev
+```
+
+Copy `frontend/.env.example` to `frontend/.env` and set `VITE_API_URL` to point at the backend (defaults to `http://localhost:8000`).
