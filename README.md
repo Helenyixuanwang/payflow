@@ -14,6 +14,17 @@ FastAPI, PostgreSQL, React + TypeScript, and deployed via Docker/Railway.
 ## Setup
 See `.env.example` for required environment variables.
 
+### Docker Compose (backend + frontend + Postgres)
+
+```bash
+cp .env.example .env   # fill in Stripe keys, etc.
+docker compose up --build
+```
+
+- Frontend: http://localhost:5173
+- Backend: http://localhost:8000 (`/health` for a liveness check)
+- Postgres: localhost:5432 (`payflow`/`payflow`/`payflow`)
+
 ### Frontend
 
 ```bash
