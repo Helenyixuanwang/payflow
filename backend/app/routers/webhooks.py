@@ -63,11 +63,19 @@ async def _sync_subscription(db: AsyncSession, subscription: Any, user_id: int |
     stripe_subscription_id = subscription["id"]
     stripe_customer_id = subscription["customer"]
     status_value = SubscriptionStatus(subscription["status"])
-    current_period_start = datetime.fromtimestamp(subscription["current_period_start"], tz=timezone.utc)
-    current_period_end = datetime.fromtimestamp(subscription["current_period_end"], tz=timezone.utc)
     cancel_at_period_end = bool(subscription["cancel_at_period_end"])
 
-    price_id = subscription["items"]["data"][0]["price"]["id"]
+    # current_period_start/end live on the subscription item, not the
+    # subscription itself, as of newer Stripe API versions; fall back to the
+    # top-level fields for older versions that still carry them there too.
+    item = subscription["items"]["data"][0]
+    current_period_start = datetime.fromtimestamp(
+        item.get("current_period_start", subscription.get("current_period_start")), tz=timezone.utc
+    )
+    current_period_end = datetime.fromtimestamp(
+        item.get("current_period_end", subscription.get("current_period_end")), tz=timezone.utc
+    )
+    price_id = item["price"]["id"]
     plan = await db.scalar(select(Plan).where(Plan.stripe_price_id == price_id))
     if plan is None:
         logger.warning("No Plan found for stripe price %s (subscription=%s)", price_id, stripe_subscription_id)

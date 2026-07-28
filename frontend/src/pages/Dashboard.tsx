@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
@@ -9,6 +9,7 @@ import type { SubscriptionRead } from "../api/types";
 export default function Dashboard() {
   const navigate = useNavigate();
   const hasToken = Boolean(getToken());
+  const [canceling, setCanceling] = useState(false);
 
   useEffect(() => {
     if (!hasToken) {
@@ -16,7 +17,7 @@ export default function Dashboard() {
     }
   }, [hasToken, navigate]);
 
-  const { data: subscription, isLoading, isError, error } = useQuery({
+  const { data: subscription, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["subscription"],
     queryFn: async () => {
       const { data } = await apiClient.get<SubscriptionRead | null>("/billing/subscription");
@@ -37,6 +38,22 @@ export default function Dashboard() {
     navigate("/login");
   }
 
+  async function handleCancel() {
+    const confirmed = window.confirm(
+      "Cancel your subscription? You'll keep access until the current period ends."
+    );
+    if (!confirmed) {
+      return;
+    }
+    setCanceling(true);
+    try {
+      await apiClient.post("/billing/subscription/cancel");
+      await refetch();
+    } finally {
+      setCanceling(false);
+    }
+  }
+
   if (!hasToken) {
     return null;
   }
@@ -54,16 +71,35 @@ export default function Dashboard() {
         {isError && <p role="alert">Couldn't load subscription status.</p>}
         {!isLoading && !isError && !subscription && <p>No active subscription.</p>}
         {subscription && (
-          <dl>
-            <dt>Plan</dt>
-            <dd>{subscription.plan?.name ?? "Unknown"}</dd>
+          <>
+            <dl>
+              <dt>Plan</dt>
+              <dd>{subscription.plan?.name ?? "Unknown"}</dd>
 
-            <dt>Status</dt>
-            <dd>{subscription.status}</dd>
+              <dt>Status</dt>
+              <dd>{subscription.status}</dd>
 
-            <dt>{subscription.cancel_at_period_end ? "Ends on" : "Renews on"}</dt>
-            <dd>{new Date(subscription.current_period_end).toLocaleDateString()}</dd>
-          </dl>
+              {!subscription.cancel_at_period_end && (
+                <>
+                  <dt>Renews on</dt>
+                  <dd>{new Date(subscription.current_period_end).toLocaleDateString()}</dd>
+                </>
+              )}
+            </dl>
+
+            {subscription.status === "active" && !subscription.cancel_at_period_end && (
+              <button type="button" onClick={handleCancel} disabled={canceling}>
+                {canceling ? "Canceling..." : "Cancel Subscription"}
+              </button>
+            )}
+
+            {subscription.cancel_at_period_end && (
+              <p>
+                Your subscription will end on{" "}
+                {new Date(subscription.current_period_end).toLocaleDateString()}.
+              </p>
+            )}
+          </>
         )}
       </section>
     </div>

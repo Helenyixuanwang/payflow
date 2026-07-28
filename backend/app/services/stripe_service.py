@@ -27,5 +27,9 @@ def retrieve_subscription(subscription_id: str) -> stripe.Subscription:
     return stripe.Subscription.retrieve(subscription_id)
 
 
+def cancel_subscription_at_period_end(subscription_id: str) -> stripe.Subscription:
+    return stripe.Subscription.modify(subscription_id, cancel_at_period_end=True)
+
+
 def construct_webhook_event(payload: bytes, sig_header: str, webhook_secret: str) -> stripe.Event:
     return stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
