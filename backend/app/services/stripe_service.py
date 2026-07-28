@@ -21,3 +21,11 @@ def create_checkout_session(
         success_url=success_url,
         cancel_url=cancel_url,
     )
+
+
+def retrieve_subscription(subscription_id: str) -> stripe.Subscription:
+    return stripe.Subscription.retrieve(subscription_id)
+
+
+def construct_webhook_event(payload: bytes, sig_header: str, webhook_secret: str) -> stripe.Event:
+    return stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
