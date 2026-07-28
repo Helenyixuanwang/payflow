@@ -1,14 +1,18 @@
 import stripe
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from starlette.concurrency import run_in_threadpool
 
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.plan import Plan
+from app.models.subscription import Subscription
 from app.models.user import User
 from app.schemas.billing import CheckoutSessionCreate, CheckoutSessionResponse
+from app.schemas.subscription import SubscriptionRead
 from app.services.stripe_service import create_checkout_session
 
 router = APIRouter(prefix="/billing", tags=["billing"])
@@ -37,3 +41,17 @@ async def create_checkout_session_endpoint(
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
 
     return CheckoutSessionResponse(checkout_url=session.url)
+
+
+@router.get("/subscription", response_model=SubscriptionRead | None)
+async def get_current_subscription(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Subscription | None:
+    return await db.scalar(
+        select(Subscription)
+        .where(Subscription.user_id == current_user.id)
+        .order_by(Subscription.created_at.desc())
+        .limit(1)
+        .options(selectinload(Subscription.plan))
+    )
