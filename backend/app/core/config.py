@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     STRIPE_SECRET_KEY: str
     STRIPE_WEBHOOK_SECRET: str
     STRIPE_PUBLISHABLE_KEY: str
+    STRIPE_PRICE_BASIC: str
+    STRIPE_PRICE_PRO: str
 
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
