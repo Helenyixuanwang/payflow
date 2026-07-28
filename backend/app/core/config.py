@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,6 +12,20 @@ class Settings(BaseSettings):
     )
 
     DATABASE_URL: str
+
+    @field_validator("DATABASE_URL")
+    @classmethod
+    def _use_asyncpg_driver(cls, value: str) -> str:
+        # Railway (and other hosts) hand out plain postgres://.../postgresql://...
+        # connection strings, but create_async_engine requires the driver to be
+        # explicit. Normalize so every consumer (the app engine, Alembic) gets
+        # a URL asyncpg can actually use, without needing the env var itself
+        # rewritten per environment.
+        if value.startswith("postgres://"):
+            value = "postgresql://" + value[len("postgres://") :]
+        if value.startswith("postgresql://"):
+            value = "postgresql+asyncpg://" + value[len("postgresql://") :]
+        return value
     STRIPE_SECRET_KEY: str
     STRIPE_WEBHOOK_SECRET: str
     STRIPE_PUBLISHABLE_KEY: str
