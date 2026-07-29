@@ -12,10 +12,16 @@ from app.models.plan import Plan
 from app.models.subscription import Subscription, SubscriptionStatus
 from app.models.user import User
 from app.schemas.billing import CheckoutSessionCreate, CheckoutSessionResponse
-from app.schemas.subscription import SubscriptionRead
+from app.schemas.subscription import PlanRead, SubscriptionRead
 from app.services.stripe_service import cancel_subscription_at_period_end, create_checkout_session
 
 router = APIRouter(prefix="/billing", tags=["billing"])
+
+
+@router.get("/plans", response_model=list[PlanRead])
+async def list_plans(db: AsyncSession = Depends(get_db)) -> list[Plan]:
+    result = await db.scalars(select(Plan).where(Plan.is_active).order_by(Plan.price_cents))
+    return list(result)
 
 
 @router.post("/checkout-session", response_model=CheckoutSessionResponse)

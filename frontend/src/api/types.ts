@@ -19,6 +19,10 @@ export interface PlanRead {
   interval: string;
 }
 
+export interface CheckoutSessionResponse {
+  checkout_url: string;
+}
+
 export interface SubscriptionRead {
   id: number;
   status: string;
